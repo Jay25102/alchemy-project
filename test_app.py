@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from app import app
-from models import db, User
+from models import db, User, Post
 
 app.config['SQLACHEMY_DATABASE_URI'] = 'postgresql:///blogly_test'
 app.config['SQLALCHEMY_ECHO'] = False
@@ -19,9 +19,15 @@ class UserViewsTestCase(TestCase):
         db.session.add(user)
         db.session.commit()
 
+        post = Post(title="some title", content="blog post content here", user_id=1)
+        db.session.add(post)
+        db.session.commit()
+
         self.user_id = user.id
+        self.post_id = post.id
 
     def tearDown(self):
+        db.session.flush()
         db.session.rollback()
 
     def test_root_redirect(self):
@@ -56,3 +62,11 @@ class UserViewsTestCase(TestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Add', html)
+
+    def test_users_post(self):
+        with app.test_client as client:
+            resp = client.get("/users/1")
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('some title', html)

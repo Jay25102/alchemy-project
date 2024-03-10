@@ -1,7 +1,7 @@
 """Blogly application."""
 
 from flask import Flask, render_template, request, redirect
-from models import db, connect_db, User
+from models import db, connect_db, User, Post
 from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
@@ -75,3 +75,55 @@ def delete_user(user_id):
     db.session.commit()
 
     return redirect("/users")
+
+@app.route("/users/<int:user_id>/posts/new")
+def new_user_post(user_id):
+    """takes the user to a form to make a new post"""
+    user = User.query.get(user_id)
+    return render_template("new_post.html", user=user)
+
+@app.route("/users/<int:user_id>/posts/new", methods=["POST"])
+def add_new_post(user_id):
+    """adds a new post from a user to the db"""
+    user = User.query.get_or_404(user_id)
+    new_post = Post(title=request.form['post_title'],
+                    content=request.form['post_content'],
+                    user_id=user.id)
+    
+    db.session.add(new_post)
+    db.session.commit()
+    
+    return redirect(f"/users/{user_id}")
+
+@app.route("/posts/<int:post_id>")
+def show_post(post_id):
+    """shows a page with a blog post"""
+    post = Post.query.get_or_404(post_id)
+    return render_template("show_post.html", post=post)
+
+@app.route("/posts/<int:post_id>/delete", methods=['POST'])
+def delete_post(post_id):
+    """deletes a post"""
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+
+    return redirect(f"/users/{post.user_id}")
+
+@app.route("/posts/<int:post_id>/edit")
+def show_edit_post(post_id):
+    """returns a form for the user to edit a post"""
+    post = Post.query.get(post_id)
+    return render_template("edit_form.html", post=post)
+
+@app.route("/posts/<int:post_id>/edit", methods=['POST'])
+def handle_update_post(post_id):
+    """handles form sumission for updating a post"""
+    post = Post.query.get_or_404(post_id)
+    post.title = request.form['post_title']
+    post.content = request.form['post_content']
+
+    db.session.add(post)
+    db.session.commit()
+    
+    return redirect(f"/users/{post.user_id}")

@@ -50,3 +50,32 @@ class Post(db.Model):
                         nullable=False,
                         passive_deletes=True)
     
+class Tag(db.Model):
+    """each post can have different tags"""
+
+    __tablename__ = "tags"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   nullable=False,
+                   autoincrement=True)
+    name = db.Column(db.Text,
+                    unique=True,
+                    nullable=False)
+    
+    posts = db.relationship("Post", secondary="posts_tags", backref="tags")
+    
+class PostTag(db.Model):
+    """many to many between posts and tags"""
+
+    __tablename__ = "posts_tags"
+
+    post_id = db.Column(db.Integer,
+                        db.ForeignKey("posts.id"),
+                        primary_key=True,
+                        nullable=False)
+    tag_id = db.Column(db.Integer,
+                       db.ForeignKey("tags.id"),
+                       primary_key=True,
+                       nullable=False)
+    
